@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+uploads/slips/*
+!uploads/slips/.gitkeep
+.DS_Store
+*.log
