@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { config } from './config/index.js';
+import { healthRouter } from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import campRoutes from './routes/camp.routes.js';
 import adminRoutes from './routes/admin.routes.js';
@@ -33,15 +34,8 @@ app.use(cookieParser());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'NeuroSage API',
-    mongoStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-  });
-});
+// Health check (Ollama + MongoDB status — see routes/health.routes.ts)
+app.use(healthRouter);
 
 // API Routes
 app.use('/api/auth', authRoutes);

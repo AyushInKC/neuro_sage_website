@@ -1,4 +1,3 @@
-import { HfInference } from '@huggingface/inference';
 import { config } from '../config/index.js';
 
 export interface ChatMessage {
@@ -12,79 +11,135 @@ export interface AIServiceResponse {
   crisisHelplineTriggered?: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Wellness system prompt — kept on the backend, never exposed to the client.
+// ---------------------------------------------------------------------------
 const SYSTEM_PROMPT = `You are the NeuroSage Mental Wellness Companion — a gentle, warm, and supportive AI space designed for university students and individuals.
 Your mission is to provide empathetic reflection, emotional grounding, and practical self-care suggestions.
 
 Core Guidelines:
 1. Tone: Calm, patient, warm, compassionate, and grounded. Never judgmental or robotic.
-2. Boundaries: You are a supportive reflective companion, NOT a medical doctor, psychiatrist, or diagnostic clinical tool. Explicitly encourage consulting a qualified professional when clinical symptoms or medical questions arise.
+2. Boundaries: You are a supportive reflective companion, NOT a medical doctor, psychiatrist, or diagnostic clinical tool. Explicitly encourage consulting a qualified professional when clinical symptoms or medical questions arise. Never diagnose, prescribe, or claim to replace a licensed mental health professional.
 3. Brevity & Space: Give thoughtful, digestible responses with natural paragraph spacing. Avoid overwhelming walls of text or bullet-point overloads.
 4. Active Listening: Validate the user's feelings first ("It sounds like you've been carrying a lot...", "That feels really heavy...").
 5. Practical Wellness Tools: When helpful, gently offer a grounding technique (such as the 5-4-3-2-1 sensory check, box breathing, or a mindful pause).
-6. Safety First: If the user expresses thoughts of self-harm, suicide, severe depression, or acute crisis, respond with deep compassion and immediately provide crisis contact details:
+6. Professional Support: Encourage professional support when topics go beyond general wellbeing — mention counselling services, campus mental health resources, or trusted adults when appropriate.
+7. Safety First: If the user expresses thoughts of self-harm, suicide, severe depression, or acute crisis, respond with deep compassion and immediately provide crisis contact details:
    - India: Tele-MANAS (Toll-Free 14416 / 1800-891-4416), KIRAN (1800-599-0019), Vandrevala Foundation (+91 9999 666 555)
    - US / Global: 988 Lifeline, or local emergency services.
    Urge them to speak to someone they trust right now.`;
 
-export class AIService {
-  private static hf: HfInference | null = config.hfToken ? new HfInference(config.hfToken) : null;
+// ---------------------------------------------------------------------------
+// Ollama request timeout (ms).  Keep generous enough for a local LLM cold-start
+// but short enough to avoid hanging indefinitely.
+// ---------------------------------------------------------------------------
+const OLLAMA_TIMEOUT_MS = 30_000;
 
+export class AIService {
   /**
-   * Generates a compassionate, reflective response to user messages.
+   * Generates a compassionate, reflective response using a locally-running Ollama
+   * instance.  Falls back to a high-quality rule-based engine if Ollama is
+   * unavailable so the companion is never completely silent.
    */
   public static async generateResponse(
     conversationHistory: ChatMessage[],
     userMessage: string
   ): Promise<AIServiceResponse> {
-    const isCrisis = this.detectCrisisKeywords(userMessage);
-
-    // If severe crisis detected, immediately return safety response with helplines
-    if (isCrisis) {
+    // --- Crisis detection: always handled locally, before any LLM call ----------
+    if (this.detectCrisisKeywords(userMessage)) {
       return {
         reply: `I hear how much pain you're in right now, and I want you to know you don't have to carry this alone. Please take a gentle breath with me.\n\nBecause I care about your safety and I am an AI companion, please reach out directly to someone who can truly support you right now:\n\n• **Tele-MANAS (Govt of India)**: Call **14416** or **1800-891-4416** (24/7, Toll-Free)\n• **KIRAN Mental Health Helpline**: **1800-599-0019**\n• **Vandrevala Foundation**: **+91 9999 666 555**\n• **International (US/Canada)**: Call or text **988**\n\nIf you are in immediate danger, please contact a trusted friend, family member, or campus counselor right now. You matter, and there is support for you.`,
         crisisHelplineTriggered: true,
       };
     }
 
-    // Try Hugging Face Inference if token is configured
-    if (this.hf && config.hfToken) {
-      try {
-        const messages = [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...conversationHistory.slice(-6).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          { role: 'user', content: userMessage },
-        ];
-
-        const response = await this.hf.chatCompletion({
-          model: config.hfModel,
-          messages,
-          max_tokens: 450,
-          temperature: 0.7,
-        });
-
-        const replyText = response.choices?.[0]?.message?.content?.trim();
-        if (replyText) {
-          return {
-            reply: replyText,
-            suggestedGrounding: replyText.toLowerCase().includes('breath') || replyText.toLowerCase().includes('grounding'),
-          };
-        }
-      } catch (err: any) {
-        console.warn('Hugging Face Inference call fallback triggered:', err?.message);
+    // --- Attempt Ollama inference -----------------------------------------------
+    try {
+      const reply = await this.callOllama(conversationHistory, userMessage);
+      if (reply) {
+        return {
+          reply,
+          suggestedGrounding:
+            reply.toLowerCase().includes('breath') ||
+            reply.toLowerCase().includes('grounding'),
+        };
       }
+    } catch (err: any) {
+      // Log a warning but do NOT expose internals to the client.
+      console.warn('[AIService] Ollama call failed, using reflective fallback:', err?.message);
     }
 
-    // High quality reflective rule-based mental-wellness response engine fallback
+    // --- High-quality reflective rule-based fallback ----------------------------
     const fallbackReply = this.generateReflectiveFallback(userMessage, conversationHistory);
     return {
       reply: fallbackReply,
-      suggestedGrounding: userMessage.toLowerCase().includes('stress') || userMessage.toLowerCase().includes('anxious'),
+      suggestedGrounding:
+        userMessage.toLowerCase().includes('stress') ||
+        userMessage.toLowerCase().includes('anxious'),
     };
   }
 
+  // ---------------------------------------------------------------------------
+  // Ollama chat completion via local HTTP API
+  // ---------------------------------------------------------------------------
+  private static async callOllama(
+    conversationHistory: ChatMessage[],
+    userMessage: string
+  ): Promise<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
+
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      // Include up to the last 6 turns for context without flooding the context window.
+      ...conversationHistory.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+      { role: 'user', content: userMessage },
+    ];
+
+    let response: Response;
+    try {
+      response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: config.ollamaModel,
+          messages,
+          stream: false,
+          options: {
+            temperature: 0.7,
+            num_predict: 512,
+          },
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      throw new Error(`Ollama returned HTTP ${response.status}`);
+    }
+
+    const data = (await response.json()) as {
+      message?: { content?: string };
+      error?: string;
+    };
+
+    if (data.error) {
+      throw new Error(`Ollama error: ${data.error}`);
+    }
+
+    const text = data.message?.content?.trim();
+    if (!text) {
+      throw new Error('Ollama returned an empty response');
+    }
+
+    return text;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Crisis keyword detection
+  // ---------------------------------------------------------------------------
   private static detectCrisisKeywords(text: string): boolean {
     const lower = text.toLowerCase();
     const crisisPatterns = [
@@ -101,6 +156,9 @@ export class AIService {
     return crisisPatterns.some((pattern) => lower.includes(pattern));
   }
 
+  // ---------------------------------------------------------------------------
+  // Rule-based reflective fallback — used when Ollama is unavailable
+  // ---------------------------------------------------------------------------
   private static generateReflectiveFallback(
     message: string,
     history: ChatMessage[]
