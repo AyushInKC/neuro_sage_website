@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { QuoteTicker } from '../../components/dashboard/QuoteTicker';
 import { useAuth } from '../../contexts/AuthContext';
 import { campApi } from '../../services/api';
 import { Registration } from '../../types';
@@ -60,6 +61,8 @@ export const DashboardOverviewPage: React.FC = () => {
           You don't have to figure everything out today. Start with one small thing that feels manageable.
         </p>
       </div>
+{/* Quote Ticker */}
+<QuoteTicker />
 
       {/* Prominent Brainwell Camp Section */}
       <div className="bg-cream/70 border border-sand rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-sm">

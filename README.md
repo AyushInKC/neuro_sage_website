@@ -85,7 +85,7 @@ npm run seed
 - **Student**: `ayush@neurosage.org` / `StudentPassword123!`
 
 ### Development Mode
-Run both backend (`http://localhost:5000`) and frontend (`http://localhost:3000`) concurrently:
+Run both backend (`http://localhost:5001`) and frontend (`http://localhost:3000`) concurrently:
 ```bash
 npm run dev
 ```
