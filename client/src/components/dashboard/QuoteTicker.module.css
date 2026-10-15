@@ -1,7 +1,7 @@
 .marquee {
   display: inline-block;
   white-space: nowrap;
-  animation: marquee 30s linear infinite;
+  animation: marquee 50s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
