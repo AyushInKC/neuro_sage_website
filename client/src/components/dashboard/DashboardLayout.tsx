@@ -36,7 +36,7 @@ export const DashboardLayout: React.FC = () => {
     { label: 'My Registrations', path: '/dashboard/my-registrations', icon: ClipboardList },
     { label: 'Wellness Pharmacy', path: '/dashboard/pharmacy', icon: Pill, tag: 'Soon' },
     { label: 'Mental Wellness Doctors', path: '/dashboard/doctors', icon: Stethoscope, tag: 'Soon' },
-    { label: 'Books for the Mind', path: '/dashboard/books', icon: BookOpen, tag: 'Soon' },
+    { label: 'Books for the Mind', path: '/dashboard/books', icon: BookOpen},
     { label: 'My Profile', path: '/dashboard/profile', icon: UserIcon },
   ];
 

@@ -86,7 +86,7 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-center space-x-2">
                 <span>Books & Mind Library</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sand/60 text-deepBrown">Soon</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sand/60 text-deepBrown"></span>
               </li>
             </ul>
           </div>
