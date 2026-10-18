@@ -128,35 +128,6 @@ export class AuthController {
         return;
       }
 
-      public static async adminLogin(req: Request, res: Response): Promise<void> {
-        try {
-          const parsed = adminLoginSchema.safeParse(req.body);
-          if (!parsed.success) {
-            res.status(400).json({ success: false, message: 'Username and password are required.' });
-            return;
-          }
-          const user = await User.findOne({
-            $or: [{ username: parsed.data.username }, { email: parsed.data.username.toLowerCase() }],
-            role: 'admin',
-          });
-          if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
-            res.status(401).json({ success: false, message: 'Invalid administrator credentials.' });
-            return;
-          }
-          const payload: AuthenticatedUserPayload = {
-            id: (user._id as any).toString(), email: user.email, role: user.role, name: user.name,
-          };
-          const tokens = generateTokens(payload);
-          user.refreshTokens = user.refreshTokens.filter((token) => token.expiresAt > new Date());
-          user.refreshTokens.push({ token: tokens.refreshToken, createdAt: new Date(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
-          await user.save();
-          setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-          res.json({ success: true, user: { id: user._id, name: user.name, email: user.email, role: user.role, isEmailVerified: user.isEmailVerified } });
-        } catch (err) {
-          console.error('Admin login error:', err);
-          res.status(500).json({ success: false, message: 'Administrator sign in is unavailable.' });
-        }
-      }
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({
@@ -221,6 +192,36 @@ export class AuthController {
     } catch (err: any) {
       console.error('Login error:', err);
       res.status(500).json({ success: false, message: 'Server error during login.' });
+    }
+  }
+
+  public static async adminLogin(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = adminLoginSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ success: false, message: 'Username and password are required.' });
+        return;
+      }
+      const user = await User.findOne({
+        $or: [{ username: parsed.data.username }, { email: parsed.data.username.toLowerCase() }],
+        role: 'admin',
+      });
+      if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
+        res.status(401).json({ success: false, message: 'Invalid administrator credentials.' });
+        return;
+      }
+      const payload: AuthenticatedUserPayload = {
+        id: (user._id as any).toString(), email: user.email, role: user.role, name: user.name,
+      };
+      const tokens = generateTokens(payload);
+      user.refreshTokens = user.refreshTokens.filter((token) => token.expiresAt > new Date());
+      user.refreshTokens.push({ token: tokens.refreshToken, createdAt: new Date(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+      await user.save();
+      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      res.json({ success: true, user: { id: user._id, name: user.name, email: user.email, role: user.role, isEmailVerified: user.isEmailVerified } });
+    } catch (err) {
+      console.error('Admin login error:', err);
+      res.status(500).json({ success: false, message: 'Administrator sign in is unavailable.' });
     }
   }
 
