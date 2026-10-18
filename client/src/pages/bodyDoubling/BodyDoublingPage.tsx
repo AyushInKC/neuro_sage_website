@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { bodyDoublingApi } from '../../services/api';
+import { bodyDoublingApi, liveBodyDoublingApi } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 import { BodyDoublingSession, TaskItem } from '../../types';
 import {
   Focus,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   Users,
   Check,
+  LockKeyhole,
 } from 'lucide-react';
 
 export const BodyDoublingPage: React.FC = () => {
@@ -29,6 +31,12 @@ export const BodyDoublingPage: React.FC = () => {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
   const [reflection, setReflection] = useState('');
+  const [liveAccess, setLiveAccess] = useState({ approved: false, pending: false });
+  const [paymentInfo, setPaymentInfo] = useState({ amount: 299, currency: 'INR', qrImageUrl: '', upiId: '' });
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [utr, setUtr] = useState('');
+  const [paymentMessage, setPaymentMessage] = useState('');
+  const navigate = useNavigate();
 
   // Box Breathing state
   const [breathingActive, setBreathingActive] = useState(false);
@@ -54,6 +62,37 @@ export const BodyDoublingPage: React.FC = () => {
       })
       .catch((err) => console.error(err));
   }, []);
+
+  useEffect(() => {
+    Promise.all([liveBodyDoublingApi.getEntitlement(), liveBodyDoublingApi.getPaymentInfo()])
+      .then(([entitlement, info]) => {
+        setLiveAccess({ approved: entitlement.approved, pending: entitlement.pending });
+        setPaymentInfo({ amount: info.amount, currency: info.currency, qrImageUrl: info.qrImageUrl, upiId: info.upiId });
+      })
+      .catch(() => {});
+  }, []);
+
+  const openLiveSession = async () => {
+    try {
+      const result = await liveBodyDoublingApi.getActiveSession();
+      navigate(`/dashboard/body-doubling/live?session=${result.session.id}`);
+    } catch (err: any) {
+      setPaymentMessage(err.message || 'No live session is currently available.');
+    }
+  };
+
+  const submitPayment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      const result = await liveBodyDoublingApi.submitPayment(utr);
+      setPaymentMessage(result.message);
+      setLiveAccess({ approved: false, pending: true });
+      setUtr('');
+      setPaymentOpen(false);
+    } catch (err: any) {
+      setPaymentMessage(err.message || 'Payment could not be submitted.');
+    }
+  };
 
   // Timer tick
   useEffect(() => {
@@ -458,6 +497,46 @@ export const BodyDoublingPage: React.FC = () => {
               />
             </div>
           </div>
+
+          <section className="bg-cream/70 border border-sand rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <LockKeyhole className="w-5 h-5 text-terracotta" />
+                <h2 className="font-serif text-xl font-bold text-deepBrown">Live Body Doubling</h2>
+              </div>
+              <p className="text-sm text-secondaryText mt-2">Work alongside others with a live NeuroSage facilitator.</p>
+              <p className="text-xs text-secondaryText mt-1">Includes access to live guided body-doubling sessions with NeuroSage facilitators.</p>
+              {paymentMessage && <p className="text-xs text-terracotta mt-3">{paymentMessage}</p>}
+            </div>
+            {liveAccess.approved ? (
+              <button onClick={openLiveSession} className="px-5 py-3 rounded-xl bg-terracotta text-white text-sm font-semibold hover:bg-terracotta-dark">
+                Join Live Body Doubling
+              </button>
+            ) : liveAccess.pending ? (
+              <span className="px-5 py-3 rounded-xl bg-sand/60 text-deepBrown text-sm font-semibold">Your payment is awaiting verification.</span>
+            ) : (
+              <button onClick={() => setPaymentOpen(true)} className="px-5 py-3 rounded-xl bg-terracotta text-white text-sm font-semibold hover:bg-terracotta-dark">
+                Unlock Live Body Doubling - ₹299
+              </button>
+            )}
+          </section>
+
+          {paymentOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-deepBrown/50 backdrop-blur-sm">
+              <form onSubmit={submitPayment} className="bg-cream border border-sand rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif text-xl font-bold text-deepBrown">Unlock Live Body Doubling</h3>
+                  <button type="button" onClick={() => setPaymentOpen(false)} className="text-secondaryText">Close</button>
+                </div>
+                <p className="text-2xl font-serif text-deepBrown">₹{paymentInfo.amount}</p>
+                {paymentInfo.qrImageUrl ? <img src={paymentInfo.qrImageUrl} alt="UPI payment QR code" className="w-48 h-48 mx-auto object-contain border border-sand rounded-xl bg-white" /> : <div className="h-32 rounded-xl border border-dashed border-sand flex items-center justify-center text-xs text-secondaryText">QR code will appear here</div>}
+                <p className="text-xs text-secondaryText text-center">Scan using any UPI app. UPI ID: <strong>{paymentInfo.upiId || 'Configured by NeuroSage'}</strong></p>
+                <p className="text-xs text-secondaryText">After completing the payment, enter your UTR / transaction reference number below.</p>
+                <input required minLength={6} value={utr} onChange={(event) => setUtr(event.target.value)} placeholder="Enter UTR / Transaction ID" className="w-full px-3 py-2.5 rounded-xl border border-sand bg-ivory text-sm" />
+                <button type="submit" className="w-full py-3 rounded-xl bg-terracotta text-white text-sm font-semibold">I've Completed Payment</button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

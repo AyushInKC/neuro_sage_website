@@ -1,4 +1,4 @@
-import { User, Camp, Registration, ChatMessage, BodyDoublingSession } from '../types';
+import { User, Camp, Registration, ChatMessage, BodyDoublingSession, LivePaymentInfo, LiveSession } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -34,6 +34,10 @@ export const authApi = {
     body: JSON.stringify(body),
   }),
   login: (body: any) => request<{ success: boolean; user: User; message: string }>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }),
+  adminLogin: (body: { username: string; password: string }) => request<{ success: boolean; user: User; message: string }>('/auth/admin-login', {
     method: 'POST',
     body: JSON.stringify(body),
   }),
@@ -113,4 +117,24 @@ export const bodyDoublingApi = {
     body: JSON.stringify(body),
   }),
   getHistory: () => request<{ success: boolean; sessions: BodyDoublingSession[] }>('/body-doubling/history'),
+};
+
+export const liveBodyDoublingApi = {
+  getPaymentInfo: () => request<{ success: boolean } & LivePaymentInfo>('/live-body-doubling/payment-info'),
+  getEntitlement: () => request<{ success: boolean; approved: boolean; pending: boolean }>('/live-body-doubling/entitlement'),
+  submitPayment: (utr: string) => request<{ success: boolean; message: string }>('/live-body-doubling/payments', {
+    method: 'POST',
+    body: JSON.stringify({ utr }),
+  }),
+  getActiveSession: () => request<{ success: boolean; session: LiveSession }>('/live-body-doubling/session/active'),
+  joinSession: (id: string) => request<{ success: boolean; roomName: string; checklist: BodyDoublingSession | null }>(`/live-body-doubling/session/${id}/join`, { method: 'POST' }),
+  leaveSession: (id: string) => request<{ success: boolean }>(`/live-body-doubling/session/${id}/leave`, { method: 'POST' }),
+};
+
+export const liveAdminApi = {
+  getPayments: () => request<{ success: boolean; payments: any[] }>('/admin/live-body-doubling/payments'),
+  approvePayment: (id: string) => request<{ success: boolean; message: string }>(`/admin/live-body-doubling/payments/${id}/approve`, { method: 'POST' }),
+  rejectPayment: (id: string, reason: string) => request<{ success: boolean; message: string }>(`/admin/live-body-doubling/payments/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  getSessions: () => request<{ success: boolean; sessions: any[] }>('/admin/live-body-doubling/sessions'),
+  createSession: () => request<{ success: boolean; session: LiveSession }>('/admin/live-body-doubling/sessions', { method: 'POST' }),
 };

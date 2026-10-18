@@ -74,6 +74,41 @@ cd neuro_sage
 npm run install:all
 ```
 
+### Environment configuration
+
+Copy the example files before starting the application. Keep the real files out of
+git:
+
+**Server (`server/.env`)**
+
+```env
+PORT=5001
+MONGODB_URI=mongodb://127.0.0.1:27017/neurosage
+CLIENT_URL=http://localhost:3000
+JWT_ACCESS_SECRET=replace-with-a-long-random-value
+JWT_REFRESH_SECRET=replace-with-a-different-long-random-value
+UPI_QR_IMAGE_URL=https://your-secure-host.example/neurosage-upi-qr.png
+UPI_ID=your-upi-id@bank
+JITSI_DOMAIN=meet.jit.si
+ADMIN_USERNAME=NeuroSage123
+ADMIN_PASSWORD=NeuroSage@3344
+ADMIN_EMAIL=admin@neurosage.org
+```
+
+`MONGO_URI` is still accepted for compatibility, but `MONGODB_URI` takes
+precedence. MongoDB must be running and reachable before the server starts; the
+server now aborts startup instead of accepting requests that cannot be persisted.
+
+**Client (`client/.env`)**
+
+```env
+VITE_API_URL=http://localhost:5001/api
+VITE_JITSI_DOMAIN=meet.jit.si
+```
+
+The UPI QR image and UPI ID are returned by the authenticated backend payment
+configuration endpoint; do not hardcode banking details in React components.
+
 ### Seeding Initial Data
 Run the seed script to initialize Brainwell Camp, the default Admin account, and a sample Student account:
 ```bash
@@ -94,6 +129,33 @@ npm run dev
 ```bash
 npm test
 ```
+
+### Live Body Doubling patient flow
+
+1. Register or sign in.
+2. Open **Body Doubling** and choose **Unlock Live Body Doubling - ₹299**.
+3. Scan the configured QR code, then submit the UTR. The account remains locked
+   while the payment is pending.
+4. Sign in as an administrator and open **Admin Portal**. Approve the UTR only
+   after checking the UPI/bank transaction.
+5. Start a live session from the Live Body Doubling admin panel.
+6. The patient can now select **Join Live Body Doubling**. The protected live
+   route embeds a generated Jitsi room and displays the patient's existing
+   checklist beside it.
+
+The manual UPI flow intentionally has no automatic gateway verification. An
+approved payment record is the entitlement source of truth.
+
+### Administrator access
+
+Open `/admin/login` or select **Get in as Admin** from the public landing page.
+The server provisions the bootstrap administrator on startup if it does not
+exist, stores only a bcrypt hash, and issues the same HTTP-only authentication
+cookies used by the rest of the application. The initial development
+credentials are configurable through `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and
+`ADMIN_EMAIL`; change them before deploying. The central admin panel is
+available at `/admin`, and every admin API additionally enforces the server-side
+admin role middleware.
 
 ---
 

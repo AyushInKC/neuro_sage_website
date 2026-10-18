@@ -88,3 +88,18 @@ export interface BodyDoublingSession {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface LiveSession {
+  id: string;
+  sessionId: string;
+  roomName: string;
+  startedAt: string;
+  status: 'active' | 'ended';
+}
+
+export interface LivePaymentInfo {
+  amount: number;
+  currency: string;
+  qrImageUrl: string;
+  upiId: string;
+}

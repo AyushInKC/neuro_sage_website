@@ -139,6 +139,9 @@ export const LandingPage: React.FC = () => {
                   <span>Explore Brainwell Camp</span>
                 </a>
               </div>
+              <Link to="/admin/login" className="inline-flex items-center gap-2 text-xs text-secondaryText hover:text-terracotta">
+                <ShieldCheck className="w-3.5 h-3.5" /> Get in as Admin
+              </Link>
 
               {/* Key Trust Highlights */}
               <div className="pt-6 border-t border-sand/70 grid grid-cols-3 gap-4 text-xs text-secondaryText">

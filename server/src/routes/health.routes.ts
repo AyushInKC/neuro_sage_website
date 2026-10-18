@@ -58,7 +58,8 @@ healthRouter.get('/api/health', async (_req: Request, res: Response) => {
     ollamaError = err?.name === 'AbortError' ? 'Ollama request timed out' : err?.message;
   }
 
-  const allOk = mongoStatus === 'connected' && ollamaStatus === 'ready';
+  // Ollama is an optional companion provider; MongoDB is required for API readiness.
+  const allOk = mongoStatus === 'connected';
 
   res.status(allOk ? 200 : 503).json({
     status: allOk ? 'ok' : 'degraded',

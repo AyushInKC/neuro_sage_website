@@ -41,7 +41,7 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   if (user?.role === 'admin') {
-    navItems.push({ label: 'Admin Portal', path: '/dashboard/admin', icon: ShieldCheck });
+    navItems.push({ label: 'Admin Panel', path: '/admin', icon: ShieldCheck });
   }
 
   const sidebarContent = (

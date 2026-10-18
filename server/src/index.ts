@@ -10,7 +10,34 @@ import campRoutes from './routes/camp.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import bodyDoublingRoutes from './routes/bodyDoubling.routes.js';
+import liveBodyDoublingRoutes, { adminLiveBodyDoublingRouter } from './routes/liveBodyDoubling.routes.js';
 import { Camp } from './models/Camp.js';
+import bcrypt from 'bcryptjs';
+import { User } from './models/User.js';
+
+async function ensureBootstrapAdmin(): Promise<void> {
+  const existing = await User.findOne({ $or: [{ username: config.admin.username }, { email: config.admin.email }] });
+  if (existing) {
+    if (existing.role !== 'admin') {
+      existing.role = 'admin';
+      await existing.save();
+    }
+    if (!existing.username) {
+      existing.username = config.admin.username;
+      await existing.save();
+    }
+    return;
+  }
+  await User.create({
+    name: 'NeuroSage Admin',
+    username: config.admin.username,
+    email: config.admin.email,
+    passwordHash: await bcrypt.hash(config.admin.password, 12),
+    role: 'admin',
+    isEmailVerified: true,
+  });
+  console.log(`[Database] Bootstrap administrator created for ${config.admin.username}.`);
+}
 
 export const app = express();
 
@@ -43,6 +70,8 @@ app.use('/api/camps', campRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/body-doubling', bodyDoublingRoutes);
+app.use('/api/live-body-doubling', liveBodyDoublingRoutes);
+app.use('/api/admin/live-body-doubling', adminLiveBodyDoublingRouter);
 
 // Global error handler
 app.use(
@@ -61,9 +90,10 @@ app.use(
 );
 
 export async function connectDB(): Promise<void> {
+  await mongoose.connect(config.mongoUri);
   try {
-    await mongoose.connect(config.mongoUri);
-    console.log(`[Database] Connected to MongoDB at ${config.mongoUri}`);
+    console.log('[Database] Connected to MongoDB.');
+    await ensureBootstrapAdmin();
 
     // Ensure Brainwell Camp event is seeded
     const existing = await Camp.findOne({ campCode: config.camp.code });
@@ -83,8 +113,9 @@ export async function connectDB(): Promise<void> {
       });
       console.log(`[Seed] Initialized ${config.camp.title} event configuration`);
     }
-  } catch (err: any) {
-    console.error('[Database] MongoDB connection error:', err.message);
+  } catch (err) {
+    console.error('[Database] MongoDB initialization error:', err);
+    throw err;
   }
 }
 
@@ -93,5 +124,8 @@ if (process.env.NODE_ENV !== 'test') {
     app.listen(config.port, () => {
       console.log(`[NeuroSage Server] Listening on http://localhost:${config.port}`);
     });
+  }).catch((err) => {
+    console.error('[NeuroSage Server] Startup aborted because MongoDB is unavailable.', err);
+    process.exitCode = 1;
   });
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminApi } from '../../services/api';
+import { LiveBodyDoublingAdmin } from './LiveBodyDoublingAdmin';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -165,6 +166,8 @@ export const AdminPortalPage: React.FC = () => {
           </button>
         </div>
       )}
+
+      <LiveBodyDoublingAdmin />
 
       {/* Real-time Queue Stats */}
       {stats && (

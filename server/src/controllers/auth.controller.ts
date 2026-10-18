@@ -10,6 +10,7 @@ import {
   AuthenticatedUserPayload,
 } from '../middleware/auth.middleware.js';
 import { EmailService } from '../services/email.service.js';
+import mongoose from 'mongoose';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -29,10 +30,18 @@ const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
 });
+const adminLoginSchema = z.object({
+  username: z.string().trim().min(1).max(100),
+  password: z.string().min(1),
+});
 
 export class AuthController {
   public static async register(req: Request, res: Response): Promise<void> {
     try {
+      if (mongoose.connection.readyState !== 1) {
+        res.status(503).json({ success: false, message: 'Unable to connect to the service. Please try again.' });
+        return;
+      }
       const parsed = registerSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({
@@ -103,13 +112,51 @@ export class AuthController {
         },
       });
     } catch (err: any) {
-      console.error('Registration error:', err);
+      if (err?.code === 11000) {
+        res.status(409).json({ success: false, message: 'An account with this email address already exists. Please log in.' });
+        return;
+      }
+      console.error('Registration error:', err?.message || err);
       res.status(500).json({ success: false, message: 'Server error during registration.' });
     }
   }
 
   public static async login(req: Request, res: Response): Promise<void> {
     try {
+      if (mongoose.connection.readyState !== 1) {
+        res.status(503).json({ success: false, message: 'Unable to connect to the service. Please try again.' });
+        return;
+      }
+
+      public static async adminLogin(req: Request, res: Response): Promise<void> {
+        try {
+          const parsed = adminLoginSchema.safeParse(req.body);
+          if (!parsed.success) {
+            res.status(400).json({ success: false, message: 'Username and password are required.' });
+            return;
+          }
+          const user = await User.findOne({
+            $or: [{ username: parsed.data.username }, { email: parsed.data.username.toLowerCase() }],
+            role: 'admin',
+          });
+          if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
+            res.status(401).json({ success: false, message: 'Invalid administrator credentials.' });
+            return;
+          }
+          const payload: AuthenticatedUserPayload = {
+            id: (user._id as any).toString(), email: user.email, role: user.role, name: user.name,
+          };
+          const tokens = generateTokens(payload);
+          user.refreshTokens = user.refreshTokens.filter((token) => token.expiresAt > new Date());
+          user.refreshTokens.push({ token: tokens.refreshToken, createdAt: new Date(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+          await user.save();
+          setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+          res.json({ success: true, user: { id: user._id, name: user.name, email: user.email, role: user.role, isEmailVerified: user.isEmailVerified } });
+        } catch (err) {
+          console.error('Admin login error:', err);
+          res.status(500).json({ success: false, message: 'Administrator sign in is unavailable.' });
+        }
+      }
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({

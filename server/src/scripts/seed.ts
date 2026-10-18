@@ -30,18 +30,19 @@ async function seed() {
   }
 
   // Admin user
-  const adminEmail = 'admin@neurosage.org';
+  const adminEmail = config.admin.email;
   let admin = await User.findOne({ email: adminEmail });
   if (!admin) {
-    const adminHash = await bcrypt.hash('AdminPassword123!', 12);
+    const adminHash = await bcrypt.hash(config.admin.password, 12);
     admin = await User.create({
       name: 'NeuroSage Admin',
+      username: config.admin.username,
       email: adminEmail,
       passwordHash: adminHash,
       role: 'admin',
       isEmailVerified: true,
     });
-    console.log('[Seed] Created default Admin user: admin@neurosage.org / AdminPassword123!');
+    console.log(`[Seed] Created administrator account: ${config.admin.username}`);
   }
 
   // Sample student user (Ayush Singh from the poster)

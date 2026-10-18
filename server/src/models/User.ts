@@ -8,6 +8,7 @@ export interface IRefreshToken {
 
 export interface IUser extends Document {
   name: string;
+  username?: string;
   email: string;
   passwordHash: string;
   role: 'user' | 'admin';
@@ -34,6 +35,13 @@ const UserSchema = new Schema<IUser>(
       required: true,
       trim: true,
       maxlength: 100,
+    },
+    username: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
     },
     email: {
       type: String,

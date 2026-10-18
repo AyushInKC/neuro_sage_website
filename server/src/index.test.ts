@@ -48,6 +48,44 @@ describe('NeuroSage Backend API', () => {
     expect(res.body.success).toBe(false);
   });
 
+  it('POST /api/auth/register persists a hashed user and login works', async () => {
+      const email = `test-${Date.now()}@neurosage.test`;
+      const register = await request(app).post('/api/auth/register').send({
+        name: 'Persisted Test User',
+        email,
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+        agreeTerms: true,
+      });
+      expect(register.status).toBe(201);
+      const stored = await User.findOne({ email });
+      expect(stored).not.toBeNull();
+      expect(stored?.passwordHash).not.toBe('Password123!');
+      expect(stored?.passwordHash).toMatch(/^\$2[aby]\$/);
+
+      const login = await request(app).post('/api/auth/login').send({
+        email,
+        password: 'Password123!',
+      });
+      expect(login.status).toBe(200);
+      expect(login.body.user.email).toBe(email);
+    });
+
+  it('rejects duplicate and invalid registrations', async () => {
+      const email = `test-duplicate-${Date.now()}@neurosage.test`;
+      const body = {
+        name: 'Duplicate Test User',
+        email,
+        password: 'Password123!',
+        confirmPassword: 'Password123!',
+        agreeTerms: true,
+      };
+      expect((await request(app).post('/api/auth/register').send(body)).status).toBe(201);
+      expect((await request(app).post('/api/auth/register').send(body)).status).toBe(400);
+      expect((await request(app).post('/api/auth/register').send({ ...body, email: 'not-an-email' })).status).toBe(400);
+      expect((await request(app).post('/api/auth/register').send({ ...body, email: `test-short-${Date.now()}@neurosage.test`, password: 'short', confirmPassword: 'short' })).status).toBe(400);
+  });
+
   it('GET /api/camps/my-registrations should reject unauthenticated request', async () => {
     const res = await request(app).get('/api/camps/my-registrations');
     expect(res.status).toBe(401);
