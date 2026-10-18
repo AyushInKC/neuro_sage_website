@@ -6,6 +6,7 @@ dotenv.config();
 
 export const config = {
   port: parseInt(process.env.PORT || '5001', 10),
+  host: process.env.HOST || '0.0.0.0',
   mongoUri:
     process.env.MONGODB_URI ||
     process.env.MONGO_URI ||
@@ -17,6 +18,10 @@ export const config = {
   cookieSecure: process.env.NODE_ENV === 'production',
   cookieSameSite: (process.env.COOKIE_SAME_SITE || 'lax') as 'lax' | 'strict' | 'none',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+  clientUrls: (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:3000')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean),
   admin: {
     username: process.env.ADMIN_USERNAME || 'NeuroSage123',
     password: process.env.ADMIN_PASSWORD || 'NeuroSage@3344',

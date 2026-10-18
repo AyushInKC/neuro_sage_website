@@ -83,8 +83,12 @@ git:
 
 ```env
 PORT=5001
+HOST=0.0.0.0
 MONGODB_URI=mongodb://127.0.0.1:27017/neurosage
 CLIENT_URL=http://localhost:3000
+# For direct API access from another machine, set this to the frontend URL.
+# Multiple origins may be comma-separated.
+# CLIENT_URLS=http://192.168.1.10:3000,http://localhost:3000
 JWT_ACCESS_SECRET=replace-with-a-long-random-value
 JWT_REFRESH_SECRET=replace-with-a-different-long-random-value
 UPI_QR_IMAGE_URL=https://your-secure-host.example/neurosage-upi-qr.png
@@ -102,7 +106,9 @@ server now aborts startup instead of accepting requests that cannot be persisted
 **Client (`client/.env`)**
 
 ```env
-VITE_API_URL=http://localhost:5001/api
+# Leave this unset for development; Vite proxies /api to the backend.
+# For a separately hosted frontend, use the backend machine's LAN/public URL:
+# VITE_API_URL=http://192.168.1.10:5001/api
 VITE_JITSI_DOMAIN=meet.jit.si
 ```
 
@@ -124,6 +130,26 @@ Run both backend (`http://localhost:5001`) and frontend (`http://localhost:3000`
 ```bash
 npm run dev
 ```
+
+### Accessing the development site from another machine
+
+`localhost` always means the machine making the request. To test from another
+computer on the same network:
+
+1. Find the host machine's LAN IPv4 address with `ipconfig` (for example,
+   `192.168.1.10`).
+2. Start the application on the host machine with `npm run dev`.
+3. Open `http://192.168.1.10:3000` on the other computer. The Vite proxy sends
+   `/api` requests to the backend on the host machine.
+4. If using a separately built/served frontend instead of the Vite proxy, set
+   `VITE_API_URL=http://192.168.1.10:5001/api` before building and set
+   `CLIENT_URLS=http://192.168.1.10:3000` in `server/.env`.
+5. Allow inbound TCP ports 3000 and 5001 through the host machine's firewall,
+   and ensure MongoDB is running on the host machine. Do not expose MongoDB's
+   port publicly.
+
+For internet access, use HTTPS and a reverse proxy or hosted frontend/backend;
+do not expose the development server directly.
 
 ### Running Tests
 ```bash

@@ -50,7 +50,7 @@ app.use(
 
 app.use(
   cors({
-    origin: [config.clientUrl, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: [...new Set([...config.clientUrls, 'http://localhost:3000', 'http://127.0.0.1:3000'])],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -121,8 +121,8 @@ export async function connectDB(): Promise<void> {
 
 if (process.env.NODE_ENV !== 'test') {
   connectDB().then(() => {
-    app.listen(config.port, () => {
-      console.log(`[NeuroSage Server] Listening on http://localhost:${config.port}`);
+    app.listen(config.port, config.host, () => {
+      console.log(`[NeuroSage Server] Listening on http://${config.host}:${config.port}`);
     });
   }).catch((err) => {
     console.error('[NeuroSage Server] Startup aborted because MongoDB is unavailable.', err);
