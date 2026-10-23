@@ -84,7 +84,8 @@ git:
 ```env
 PORT=5001
 HOST=0.0.0.0
-MONGODB_URI=mongodb://127.0.0.1:27017/neurosage
+# Use the MongoDB Atlas URI configured in your deployment environment.
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/<database>?retryWrites=true&w=majority
 CLIENT_URL=http://localhost:3000
 # For direct API access from another machine, set this to the frontend URL.
 # Multiple origins may be comma-separated.
@@ -102,6 +103,9 @@ ADMIN_EMAIL=admin@neurosage.org
 `MONGO_URI` is still accepted for compatibility, but `MONGODB_URI` takes
 precedence. MongoDB must be running and reachable before the server starts; the
 server now aborts startup instead of accepting requests that cannot be persisted.
+For production, `MONGODB_URI` is required and must be configured in the backend
+hosting provider's environment variables. Never commit the URI or put it in
+client-side environment variables.
 
 **Client (`client/.env`)**
 

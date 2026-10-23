@@ -150,7 +150,7 @@ export const DashboardOverviewPage: React.FC = () => {
               <Focus className="w-5 h-5 text-deepBrown" />
             </div>
             <h3 className="font-serif text-2xl font-bold text-deepBrown">
-              Body Doubling Workspace
+              ADHD Focus Zone - Body Doubling Workspace
             </h3>
             <p className="text-xs sm:text-sm text-secondaryText leading-relaxed">
               Stuck on an assignment or feeling overwhelmed by a task? Focus alongside gentle ambient soundscapes, a quiet timer, and a short, manageable checklist.

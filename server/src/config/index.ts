@@ -4,13 +4,16 @@ import crypto from 'crypto';
 
 dotenv.config();
 
+const configuredMongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+if (process.env.NODE_ENV === 'production' && !configuredMongoUri) {
+  throw new Error('MONGODB_URI must be configured in production.');
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '5001', 10),
   host: process.env.HOST || '0.0.0.0',
-  mongoUri:
-    process.env.MONGODB_URI ||
-    process.env.MONGO_URI ||
-    'mongodb://localhost:27017/neurosage',
+  mongoUri: configuredMongoUri || 'mongodb://localhost:27017/neurosage',
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET || crypto.randomBytes(32).toString('hex'),
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || crypto.randomBytes(32).toString('hex'),
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',

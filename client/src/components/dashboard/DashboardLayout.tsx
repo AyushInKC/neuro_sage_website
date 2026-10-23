@@ -31,7 +31,7 @@ export const DashboardLayout: React.FC = () => {
   const navItems = [
     { label: 'Overview', path: '/dashboard', icon: LayoutDashboard, end: true },
     { label: 'AI Wellness Companion', path: '/dashboard/companion', icon: Sparkles },
-    { label: 'Body Doubling', path: '/dashboard/body-doubling', icon: Focus },
+    { label: 'ADHD Focus Zone', path: '/dashboard/body-doubling', icon: Focus },
     { label: 'Mental Wellness Camps', path: '/dashboard/camps', icon: Tent },
     { label: 'My Registrations', path: '/dashboard/my-registrations', icon: ClipboardList },
     { label: 'Wellness Pharmacy', path: '/dashboard/pharmacy', icon: Pill, tag: 'Soon' },
