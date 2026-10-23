@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Sparkles,
   Focus,
+  Wind,
   Tent,
   Pill,
   Stethoscope,
@@ -31,6 +32,7 @@ export const DashboardLayout: React.FC = () => {
   const navItems = [
     { label: 'Overview', path: '/dashboard', icon: LayoutDashboard, end: true },
     { label: 'AI Wellness Companion', path: '/dashboard/companion', icon: Sparkles },
+    { label: 'Breathing Exercise', path: '/dashboard/breathing', icon: Wind },
     { label: 'ADHD Focus Zone', path: '/dashboard/body-doubling', icon: Focus },
     { label: 'Mental Wellness Camps', path: '/dashboard/camps', icon: Tent },
     { label: 'My Registrations', path: '/dashboard/my-registrations', icon: ClipboardList },

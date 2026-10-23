@@ -13,8 +13,6 @@ import {
   Circle,
   Plus,
   Trash2,
-  Wind,
-  Sparkles,
   Users,
   Check,
   LockKeyhole,
@@ -37,11 +35,6 @@ export const BodyDoublingPage: React.FC = () => {
   const [utr, setUtr] = useState('');
   const [paymentMessage, setPaymentMessage] = useState('');
   const navigate = useNavigate();
-
-  // Box Breathing state
-  const [breathingActive, setBreathingActive] = useState(false);
-  const [breathPhase, setBreathPhase] = useState<'Inhale' | 'Hold' | 'Exhale' | 'Pause'>('Inhale');
-  const [breathTimer, setBreathTimer] = useState(4);
 
   // Web Audio Context for synthesizer soundscapes
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -107,28 +100,6 @@ export const BodyDoublingPage: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
-
-  // Box breathing cycle
-  useEffect(() => {
-    let breathInterval: any = null;
-    if (breathingActive) {
-      breathInterval = setInterval(() => {
-        setBreathTimer((prev) => {
-          if (prev <= 1) {
-            setBreathPhase((current) => {
-              if (current === 'Inhale') return 'Hold';
-              if (current === 'Hold') return 'Exhale';
-              if (current === 'Exhale') return 'Pause';
-              return 'Inhale';
-            });
-            return 4;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(breathInterval);
-  }, [breathingActive]);
 
   // Ambient sound generation using Web Audio API
   const startSound = (type: string) => {
@@ -273,7 +244,7 @@ export const BodyDoublingPage: React.FC = () => {
 
       {/* Main Grid: Timer on Left, Tasks on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Focus Timer & Grounding */}
+        {/* Left Column: Focus Timer */}
         <div className="lg:col-span-7 space-y-6">
           {/* Timer Card */}
           <div className="bg-cream/60 border border-sand rounded-3xl p-8 text-center space-y-6 shadow-sm">
@@ -380,38 +351,6 @@ export const BodyDoublingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Sensory Box Breathing Tool */}
-          <div className="bg-ivory border border-sand rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-sm font-semibold text-deepBrown">
-                <Wind className="w-4 h-4 text-terracotta" />
-                <span>Box Breathing Grounding (4-4-4-4)</span>
-              </div>
-              <button
-                onClick={() => setBreathingActive(!breathingActive)}
-                className="text-xs px-3 py-1 rounded-full bg-cream border border-sand text-deepBrown hover:bg-sand/30"
-              >
-                {breathingActive ? 'Stop exercise' : 'Start grounding'}
-              </button>
-            </div>
-
-            {breathingActive ? (
-              <div className="text-center py-6 space-y-2">
-                <div className="inline-block p-6 rounded-full bg-rose-dusty/20 border border-sand animate-pulse">
-                  <span className="font-serif text-3xl font-bold text-terracotta">
-                    {breathPhase} ({breathTimer}s)
-                  </span>
-                </div>
-                <p className="text-xs text-secondaryText">
-                  Follow the rhythm: Inhale 4s, Hold 4s, Exhale 4s, Pause 4s.
-                </p>
-              </div>
-            ) : (
-              <p className="text-xs text-secondaryText leading-relaxed">
-                Feeling overwhelmed before starting? Take 60 seconds of gentle box-breathing to regulate your autonomic nervous system.
-              </p>
-            )}
-          </div>
         </div>
 
         {/* Right Column: Manageable Tasks Checklist */}

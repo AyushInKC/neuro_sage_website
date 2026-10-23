@@ -17,6 +17,7 @@ import { CampDetailsPage } from './pages/camps/CampDetailsPage';
 import { CampRegisterPage } from './pages/camps/CampRegisterPage';
 import { MyRegistrationsPage } from './pages/camps/MyRegistrationsPage';
 import { AICompanionPage } from './pages/ai/AICompanionPage';
+import { BreathingExercisePage } from './pages/breathing/BreathingExercisePage';
 import { BodyDoublingPage } from './pages/bodyDoubling/BodyDoublingPage';
 import { LiveBodyDoublingPage } from './pages/bodyDoubling/LiveBodyDoublingPage';
 import { PharmacyPage, DoctorsPage, BooksPage } from './pages/services/ComingSoonPages';
@@ -58,6 +59,7 @@ export const App: React.FC = () => {
           >
             <Route index element={<DashboardOverviewPage />} />
             <Route path="companion" element={<AICompanionPage />} />
+            <Route path="breathing" element={<BreathingExercisePage />} />
             <Route path="body-doubling" element={<BodyDoublingPage />} />
             <Route path="body-doubling/live" element={<LiveBodyDoublingPage />} />
             <Route path="camps" element={<CampDetailsPage />} />
