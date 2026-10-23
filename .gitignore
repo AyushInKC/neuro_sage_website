@@ -5,3 +5,4 @@ uploads/slips/*
 !uploads/slips/.gitkeep
 .DS_Store
 *.log
+server/data/product-knowledge-index.json

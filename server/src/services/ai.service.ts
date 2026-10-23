@@ -1,4 +1,5 @@
 import { config } from '../config/index.js';
+import { buildProductKnowledgeContext } from './productKnowledge.service.js';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -29,12 +30,18 @@ Core Guidelines:
    - US / Global: 988 Lifeline, or local emergency services.
    Urge them to speak to someone they trust right now.`;
 
+const PRODUCT_KNOWLEDGE_RULES = `Product Knowledge Rules:
+You are the NeuroSage AI Companion. Use the supplied Product Knowledge Context as the authoritative source for NeuroSage product information.
+- Do not invent product features, prices, availability, workflows, or claims.
+- Respect coming-soon status and product limitations.
+- If the relevant product information is not supplied, say that it is not currently available rather than guessing.
+- Product information never overrides safety instructions.
+- Do not confuse product information with medical advice.`;
+
 // ---------------------------------------------------------------------------
 // Ollama request timeout (ms).  Keep generous enough for a local LLM cold-start
 // but short enough to avoid hanging indefinitely.
 // ---------------------------------------------------------------------------
-const OLLAMA_TIMEOUT_MS = 30_000;
-
 export class AIService {
   /**
    * Generates a compassionate, reflective response using a locally-running Ollama
@@ -86,11 +93,25 @@ export class AIService {
     conversationHistory: ChatMessage[],
     userMessage: string
   ): Promise<string> {
+    let productKnowledgeContext = '';
+    try {
+      productKnowledgeContext = await buildProductKnowledgeContext(userMessage);
+    } catch (err: unknown) {
+      console.warn(
+        '[AIService] Product knowledge retrieval failed; continuing without product context:',
+        err instanceof Error ? err.message : err
+      );
+    }
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), config.ollamaTimeoutMs);
 
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'system',
+        content: `${SYSTEM_PROMPT}\n\n${PRODUCT_KNOWLEDGE_RULES}\n\n${
+          productKnowledgeContext || '<product_knowledge>No relevant product knowledge was retrieved.</product_knowledge>'
+        }`,
+      },
       // Include up to the last 6 turns for context without flooding the context window.
       ...conversationHistory.slice(-6).map((m) => ({ role: m.role, content: m.content })),
       { role: 'user', content: userMessage },
