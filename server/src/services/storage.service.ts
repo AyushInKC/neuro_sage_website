@@ -93,6 +93,69 @@ export class StorageService {
     };
   }
 
+  public static async saveEventPoster(
+    fileBuffer: Buffer,
+    originalName: string
+  ): Promise<ValidatedFileResult> {
+    const posterDir = config.eventPosterDir;
+    if (!fs.existsSync(posterDir)) fs.mkdirSync(posterDir, { recursive: true });
+    const signatureCheck = this.validateFileSignature(fileBuffer);
+    const detectedMime = signatureCheck.detectedMime === 'image/png'
+      ? 'image/png'
+      : signatureCheck.detectedMime === 'image/jpeg'
+        ? 'image/jpeg'
+        : null;
+    if (!signatureCheck.isValid || !detectedMime) {
+      throw new Error('Invalid poster file. Upload an authentic JPG or PNG image.');
+    }
+    const ext = detectedMime === 'image/png' ? '.png' : '.jpg';
+    const storedFilename = `event_${Date.now()}_${crypto.randomUUID()}${ext}`;
+    const filePath = path.join(posterDir, storedFilename);
+    await fs.promises.writeFile(filePath, fileBuffer);
+    return {
+      storedFilename,
+      originalName: path.basename(originalName).replace(/[^a-zA-Z0-9._-]/g, '_'),
+      mimeType: detectedMime,
+      size: fileBuffer.length,
+      filePath,
+    };
+  }
+
+  public static getEventPosterPath(storedFilename: string): string {
+    const filePath = path.join(config.eventPosterDir, path.basename(storedFilename));
+    if (!fs.existsSync(filePath)) throw new Error('Requested poster not found');
+    return filePath;
+  }
+
+  public static async deleteEventPoster(storedFilename: string): Promise<void> {
+    const filePath = path.join(config.eventPosterDir, path.basename(storedFilename));
+    await fs.promises.rm(filePath, { force: true });
+  }
+
+  public static async saveLibraryBookImage(fileBuffer: Buffer, originalName: string): Promise<ValidatedFileResult> {
+    const dir = config.libraryBookDir;
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const signature = this.validateFileSignature(fileBuffer);
+    const mimeType = signature.detectedMime === 'image/png' || signature.detectedMime === 'image/jpeg'
+      ? signature.detectedMime : null;
+    if (!signature.isValid || !mimeType) throw new Error('Invalid book image. Upload a JPG or PNG image.');
+    const ext = mimeType === 'image/png' ? '.png' : '.jpg';
+    const storedFilename = `book_${Date.now()}_${crypto.randomUUID()}${ext}`;
+    const filePath = path.join(dir, storedFilename);
+    await fs.promises.writeFile(filePath, fileBuffer);
+    return { storedFilename, originalName: path.basename(originalName), mimeType, size: fileBuffer.length, filePath };
+  }
+
+  public static getLibraryBookImagePath(storedFilename: string): string {
+    const filePath = path.join(config.libraryBookDir, path.basename(storedFilename));
+    if (!fs.existsSync(filePath)) throw new Error('Book image not found');
+    return filePath;
+  }
+
+  public static async deleteLibraryBookImage(storedFilename: string): Promise<void> {
+    await fs.promises.rm(path.join(config.libraryBookDir, path.basename(storedFilename)), { force: true });
+  }
+
   /**
    * Retrieves file path for authorized access.
    */

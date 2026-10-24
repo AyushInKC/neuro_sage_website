@@ -14,7 +14,9 @@ import {
   Settings,
   X,
   History,
+  CalendarDays,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const AdminPortalPage: React.FC = () => {
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -168,6 +170,15 @@ export const AdminPortalPage: React.FC = () => {
       )}
 
       <LiveBodyDoublingAdmin />
+
+      <Link to="/admin/events" className="flex items-center justify-between rounded-2xl border border-sand bg-cream/60 p-5 hover:bg-cream">
+        <div className="flex items-center gap-3"><CalendarDays className="w-5 h-5 text-terracotta" /><div><h2 className="font-serif text-xl font-bold text-deepBrown">Event management</h2><p className="text-xs text-secondaryText">Create, update, delete, and publish event posters.</p></div></div>
+        <span className="text-sm font-semibold text-terracotta">Manage Events →</span>
+      </Link>
+      <Link to="/admin/library" className="flex items-center justify-between rounded-2xl border border-sand bg-cream/60 p-5 hover:bg-cream">
+        <div><h2 className="font-serif text-xl font-bold text-deepBrown">Library for the Mind</h2><p className="text-xs text-secondaryText">Post books and quotes for the user library.</p></div>
+        <span className="text-sm font-semibold text-terracotta">Manage Library →</span>
+      </Link>
 
       {/* Real-time Queue Stats */}
       {stats && (

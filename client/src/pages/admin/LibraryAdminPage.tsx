@@ -1,0 +1,20 @@
+import React, { useEffect, useState } from 'react';
+import { BookOpen, Trash2 } from 'lucide-react';
+import { libraryApi } from '../../services/api';
+import { LibraryBook, Quote } from '../../types';
+
+export const LibraryAdminPage: React.FC = () => {
+  const [books, setBooks] = useState<LibraryBook[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [book, setBook] = useState({ bookName: '', price: '0', buyLink: '', image: null as File | null });
+  const [quote, setQuote] = useState({ text: '', author: '' });
+  const load = async () => { const r = await libraryApi.list(); setBooks(r.books); setQuotes(r.quotes); };
+  useEffect(() => { load().catch(console.error); }, []);
+  const addBook = async (e: React.FormEvent) => { e.preventDefault(); if (!book.image) return; const data = new FormData(); data.append('bookName', book.bookName); data.append('price', book.price); data.append('buyLink', book.buyLink); data.append('bookImage', book.image); await libraryApi.createBook(data); setBook({ bookName: '', price: '0', buyLink: '', image: null }); await load(); };
+  const addQuote = async (e: React.FormEvent) => { e.preventDefault(); await libraryApi.createQuote(quote); setQuote({ text: '', author: '' }); await load(); };
+  return <div className="space-y-8"><div className="border-b border-sand/70 pb-5"><h1 className="font-serif text-4xl font-bold text-deepBrown flex items-center gap-2"><BookOpen className="w-7 h-7 text-terracotta" /> Library for the Mind</h1><p className="text-sm text-secondaryText mt-2">Post books and quotes for users.</p></div>
+    <div className="grid lg:grid-cols-2 gap-6"><form onSubmit={addBook} className="rounded-2xl border border-sand bg-cream/60 p-5 space-y-3"><h2 className="font-serif text-xl font-bold text-deepBrown">Post a book</h2><input required placeholder="Book name" value={book.bookName} onChange={(e) => setBook({ ...book, bookName: e.target.value })} className="w-full rounded-lg border border-sand p-2.5 text-sm" /><input required type="number" min="0" placeholder="Price" value={book.price} onChange={(e) => setBook({ ...book, price: e.target.value })} className="w-full rounded-lg border border-sand p-2.5 text-sm" /><input required type="url" placeholder="Link to buy" value={book.buyLink} onChange={(e) => setBook({ ...book, buyLink: e.target.value })} className="w-full rounded-lg border border-sand p-2.5 text-sm" /><input required type="file" accept="image/png,image/jpeg" onChange={(e) => setBook({ ...book, image: e.target.files?.[0] || null })} /><button className="rounded-full bg-terracotta px-5 py-2.5 text-sm font-semibold text-white">Post Book</button></form>
+    <form onSubmit={addQuote} className="rounded-2xl border border-sand bg-cream/60 p-5 space-y-3"><h2 className="font-serif text-xl font-bold text-deepBrown">Post a quote</h2><textarea required placeholder="Quote" value={quote.text} onChange={(e) => setQuote({ ...quote, text: e.target.value })} className="w-full rounded-lg border border-sand p-2.5 text-sm" rows={4} /><input placeholder="Author (optional)" value={quote.author} onChange={(e) => setQuote({ ...quote, author: e.target.value })} className="w-full rounded-lg border border-sand p-2.5 text-sm" /><button className="rounded-full bg-terracotta px-5 py-2.5 text-sm font-semibold text-white">Post Quote</button></form></div>
+    <section className="space-y-3"><h2 className="font-serif text-2xl font-bold text-deepBrown">Published items</h2>{books.map((b) => <div key={b.id} className="flex items-center justify-between border-b border-sand py-3 text-sm"><span>{b.bookName} · ₹{b.price}</span><button onClick={() => libraryApi.deleteBook(b.id).then(load)} className="text-errorDark"><Trash2 className="w-4 h-4" /></button></div>)}{quotes.map((q) => <div key={q._id} className="flex items-center justify-between border-b border-sand py-3 text-sm"><span>“{q.text}”</span><button onClick={() => libraryApi.deleteQuote(q._id).then(load)} className="text-errorDark"><Trash2 className="w-4 h-4" /></button></div>)}</section>
+  </div>;
+};

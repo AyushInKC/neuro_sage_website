@@ -19,7 +19,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
     try {
-      const data = await authApi.me();
+      const data = window.location.pathname.startsWith('/admin')
+        ? await authApi.adminMe()
+        : await authApi.me();
       if (data.success && data.user) {
         setUser(data.user);
       } else {
@@ -52,7 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await authApi.logout();
+      if (user?.role === 'admin') await authApi.adminLogout();
+      else await authApi.logout();
     } finally {
       setUser(null);
     }

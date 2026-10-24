@@ -22,6 +22,31 @@ export interface Camp {
   description: string;
 }
 
+export interface Event {
+  id: string;
+  eventName: string;
+  registrationFee: number;
+  location: string;
+  mode: 'virtual' | 'live';
+  posterUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LibraryBook {
+  id: string;
+  bookName: string;
+  price: number;
+  buyLink: string;
+  imageUrl: string;
+}
+
+export interface Quote {
+  _id: string;
+  text: string;
+  author?: string;
+}
+
 export type PaymentStatus = 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
 export type RegistrationStatus =
   | 'PENDING_PAYMENT_VERIFICATION'

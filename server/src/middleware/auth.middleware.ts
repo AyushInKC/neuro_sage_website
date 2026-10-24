@@ -28,15 +28,16 @@ export function generateTokens(payload: AuthenticatedUserPayload) {
   return { accessToken, refreshToken };
 }
 
-export function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
-  res.cookie('accessToken', accessToken, {
+export function setAuthCookies(res: Response, accessToken: string, refreshToken: string, role: 'user' | 'admin' = 'user') {
+  const prefix = role === 'admin' ? 'admin' : '';
+  res.cookie(`${prefix ? `${prefix}_` : ''}accessToken`, accessToken, {
     httpOnly: true,
     secure: config.cookieSecure,
     sameSite: config.cookieSameSite,
     maxAge: 15 * 60 * 1000, // 15 mins
   });
 
-  res.cookie('refreshToken', refreshToken, {
+  res.cookie(`${prefix ? `${prefix}_` : ''}refreshToken`, refreshToken, {
     httpOnly: true,
     secure: config.cookieSecure,
     sameSite: config.cookieSameSite,
@@ -55,16 +56,19 @@ export function clearAuthCookies(res: Response) {
     secure: config.cookieSecure,
     sameSite: config.cookieSameSite,
   });
+  res.clearCookie('admin_accessToken', { httpOnly: true, secure: config.cookieSecure, sameSite: config.cookieSameSite });
+  res.clearCookie('admin_refreshToken', { httpOnly: true, secure: config.cookieSecure, sameSite: config.cookieSameSite });
 }
 
-export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
+async function authenticateWithRole(req: Request, res: Response, next: NextFunction, role: 'user' | 'admin'): Promise<void> {
+  const prefix = role === 'admin' ? 'admin_' : '';
   const accessToken =
-    req.cookies?.accessToken ||
+    req.cookies?.[`${prefix}accessToken`] ||
     (req.headers.authorization?.startsWith('Bearer ')
       ? req.headers.authorization.split(' ')[1]
       : null);
 
-  const refreshToken = req.cookies?.refreshToken;
+  const refreshToken = req.cookies?.[`${prefix}refreshToken`];
 
   if (!accessToken && !refreshToken) {
     res.status(401).json({ success: false, message: 'Authentication required' });
@@ -75,6 +79,10 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   if (accessToken) {
     try {
       const decoded = jwt.verify(accessToken, config.jwtAccessSecret) as AuthenticatedUserPayload;
+      if (decoded.role !== role) {
+        res.status(401).json({ success: false, message: 'Invalid authentication token' });
+        return;
+      }
       req.user = decoded;
       return next();
     } catch (err: any) {
@@ -133,11 +141,19 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     });
     await user.save();
 
-    setAuthCookies(res, newTokens.accessToken, newTokens.refreshToken);
+    setAuthCookies(res, newTokens.accessToken, newTokens.refreshToken, role);
     req.user = payload;
     next();
   } catch (err) {
     clearAuthCookies(res);
     res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
   }
+}
+
+export function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  return authenticateWithRole(req, res, next, 'user');
+}
+
+export function authenticateAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  return authenticateWithRole(req, res, next, 'admin');
 }

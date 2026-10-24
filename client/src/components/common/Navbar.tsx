@@ -64,11 +64,11 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <Link
-                to="/dashboard"
+                to={user.role === 'admin' ? '/admin' : '/dashboard'}
                 className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium bg-cream text-deepBrown border border-sand hover:bg-sand/40 transition-colors"
               >
                 <UserIcon className="w-4 h-4 text-terracotta" />
-                <span>Dashboard</span>
+                <span>{user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}</span>
               </Link>
             ) : (
               <>
@@ -82,7 +82,7 @@ export const Navbar: React.FC = () => {
                   to="/register"
                   className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-full text-sm font-medium bg-terracotta text-white hover:bg-terracotta-dark shadow-sm transition-all"
                 >
-                  <span>Get started</span>
+                  <span>Sign Up</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </>
@@ -118,11 +118,11 @@ export const Navbar: React.FC = () => {
           <div className="pt-4 border-t border-sand/60 flex flex-col space-y-2">
             {user ? (
               <Link
-                to="/dashboard"
+                to={user.role === 'admin' ? '/admin' : '/dashboard'}
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center px-4 py-2.5 rounded-full text-sm font-medium bg-terracotta text-white"
               >
-                Open Dashboard
+                {user.role === 'admin' ? 'Open Admin Panel' : 'Open Dashboard'}
               </Link>
             ) : (
               <>
@@ -138,7 +138,7 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full text-center px-4 py-2 text-sm font-medium text-white bg-terracotta rounded-full"
                 >
-                  Get started
+                  Sign Up
                 </Link>
               </>
             )}

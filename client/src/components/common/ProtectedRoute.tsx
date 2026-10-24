@@ -5,11 +5,13 @@ import { useAuth } from '../../contexts/AuthContext';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireUser?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false,
+  requireUser = false,
 }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -31,6 +33,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (requireAdmin && user.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  if (requireUser && user.role !== 'user') {
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;

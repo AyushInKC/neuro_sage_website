@@ -110,7 +110,7 @@ export const LoginPage: React.FC = () => {
               disabled={loading}
               className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-terracotta hover:bg-terracotta-dark focus:outline-none disabled:opacity-50 transition-all shadow-sm"
             >
-              <span>{loading ? 'Verifying credentials...' : 'Sign in to Dashboard'}</span>
+              <span>{loading ? 'Verifying credentials...' : 'Login'}</span>
               {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
@@ -118,7 +118,7 @@ export const LoginPage: React.FC = () => {
           <div className="pt-4 border-t border-sand/70 text-center text-xs text-secondaryText">
             <span>Don't have an account yet? </span>
             <Link to="/register" className="font-semibold text-terracotta hover:underline">
-              Create an account
+              Sign Up
             </Link>
           </div>
         </div>

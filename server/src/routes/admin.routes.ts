@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { AdminController } from '../controllers/admin.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticateAdmin } from '../middleware/auth.middleware.js';
 import { requireAdmin } from '../middleware/role.middleware.js';
 
 const router = Router();
 
 // All admin routes require authentication and admin role
-router.use(authenticate, requireAdmin);
+router.use(authenticateAdmin, requireAdmin);
 
 router.get('/registrations', AdminController.getRegistrations);
 router.post('/registrations/:id/verify', AdminController.verifyPayment);

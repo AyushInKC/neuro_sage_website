@@ -125,7 +125,7 @@ export const LandingPage: React.FC = () => {
               {/* CTA Group */}
               <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <Link
-                  to={user ? '/dashboard' : '/register'}
+                  to={user ? (user.role === 'admin' ? '/admin' : '/dashboard') : '/register'}
                   className="inline-flex items-center justify-center space-x-2 px-7 py-3.5 rounded-full text-sm font-semibold bg-terracotta text-white hover:bg-terracotta-dark shadow-sm hover:shadow transition-all"
                 >
                   <span>Begin your journey</span>

@@ -150,6 +150,14 @@ export class AuthController {
         return;
       }
 
+      if (user.role !== 'user') {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid email or password.',
+        });
+        return;
+      }
+
       const isMatch = await bcrypt.compare(password, user.passwordHash);
       if (!isMatch) {
         res.status(401).json({
@@ -217,7 +225,7 @@ export class AuthController {
       user.refreshTokens = user.refreshTokens.filter((token) => token.expiresAt > new Date());
       user.refreshTokens.push({ token: tokens.refreshToken, createdAt: new Date(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
       await user.save();
-      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      setAuthCookies(res, tokens.accessToken, tokens.refreshToken, 'admin');
       res.json({ success: true, user: { id: user._id, name: user.name, email: user.email, role: user.role, isEmailVerified: user.isEmailVerified } });
     } catch (err) {
       console.error('Admin login error:', err);
@@ -255,7 +263,7 @@ export class AuthController {
 
   public static async logout(req: Request, res: Response): Promise<void> {
     try {
-      const refreshToken = req.cookies?.refreshToken;
+      const refreshToken = req.cookies?.refreshToken || req.cookies?.admin_refreshToken;
       if (refreshToken && req.user) {
         await User.findByIdAndUpdate(req.user.id, {
           $pull: { refreshTokens: { token: refreshToken } },

@@ -14,6 +14,8 @@ import liveBodyDoublingRoutes, { adminLiveBodyDoublingRouter } from './routes/li
 import { Camp } from './models/Camp.js';
 import bcrypt from 'bcryptjs';
 import { User } from './models/User.js';
+import eventRoutes from './routes/event.routes.js';
+import libraryRoutes from './routes/library.routes.js';
 
 async function ensureBootstrapAdmin(): Promise<void> {
   const existing = await User.findOne({ $or: [{ username: config.admin.username }, { email: config.admin.email }] });
@@ -67,6 +69,8 @@ app.use(healthRouter);
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/camps', campRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/library', libraryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/body-doubling', bodyDoublingRoutes);

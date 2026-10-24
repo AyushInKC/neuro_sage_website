@@ -17,3 +17,15 @@ export const uploadPaymentSlip = multer({
     }
   },
 });
+
+export const uploadEventPoster = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (['image/jpeg', 'image/png'].includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid poster format. Only JPG and PNG files are supported.'));
+    }
+  },
+});

@@ -38,6 +38,8 @@ export const config = {
     jitsiDomain: process.env.JITSI_DOMAIN || 'meet.jit.si',
   },
   uploadDir: path.resolve(process.cwd(), 'uploads/slips'),
+  eventPosterDir: path.resolve(process.cwd(), 'uploads/event-posters'),
+  libraryBookDir: path.resolve(process.cwd(), 'uploads/library-books'),
   // AI provider configuration
   aiProvider: process.env.AI_PROVIDER || 'ollama',
   ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',

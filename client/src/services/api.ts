@@ -1,4 +1,4 @@
-import { User, Camp, Registration, ChatMessage, BodyDoublingSession, LivePaymentInfo, LiveSession } from '../types';
+import { User, Camp, Event, LibraryBook, Quote, Registration, ChatMessage, BodyDoublingSession, LivePaymentInfo, LiveSession } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -42,7 +42,9 @@ export const authApi = {
     body: JSON.stringify(body),
   }),
   me: () => request<{ success: boolean; user: User }>('/auth/me', { method: 'GET' }),
+  adminMe: () => request<{ success: boolean; user: User }>('/auth/admin-me', { method: 'GET' }),
   logout: () => request<{ success: boolean; message: string }>('/auth/logout', { method: 'POST' }),
+  adminLogout: () => request<{ success: boolean; message: string }>('/auth/admin-logout', { method: 'POST' }),
   forgotPassword: (email: string) => request<{ success: boolean; message: string }>('/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email }),
@@ -65,6 +67,29 @@ export const campApi = {
     method: 'POST',
     body: JSON.stringify({ reason }),
   }),
+};
+
+export const eventApi = {
+  list: () => request<{ success: boolean; events: Event[] }>('/events'),
+  create: (formData: FormData) => request<{ success: boolean; event: Event }>('/events', {
+    method: 'POST',
+    body: formData,
+  }),
+  update: (id: string, formData: FormData) => request<{ success: boolean; event: Event }>(`/events/${id}`, {
+    method: 'PUT',
+    body: formData,
+  }),
+  remove: (id: string) => request<{ success: boolean; message: string }>(`/events/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+export const libraryApi = {
+  list: () => request<{ success: boolean; books: LibraryBook[]; quotes: Quote[] }>('/library'),
+  createBook: (data: FormData) => request<{ success: boolean; book: LibraryBook }>('/library/books', { method: 'POST', body: data }),
+  deleteBook: (id: string) => request<{ success: boolean }>(`/library/books/${id}`, { method: 'DELETE' }),
+  createQuote: (body: { text: string; author?: string }) => request<{ success: boolean; quote: Quote }>('/library/quotes', { method: 'POST', body: JSON.stringify(body) }),
+  deleteQuote: (id: string) => request<{ success: boolean }>(`/library/quotes/${id}`, { method: 'DELETE' }),
 };
 
 // Admin API
