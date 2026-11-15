@@ -45,7 +45,7 @@ jobs:
 
       # Backend tests
       - name: Run backend tests
-        run: npx vitest run --hookTimeout=30000
+        run: npx vitest run --config vitest.config.ts
         working-directory: server
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
