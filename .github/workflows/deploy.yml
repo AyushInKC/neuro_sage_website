@@ -1,0 +1,52 @@
+
+name: NeuroSage CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Test and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Frontend
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: client
+
+      # Backend
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: server
+
+      # Backend tests
+      - name: Run backend tests
+        run: npx vitest run --hookTimeout=30000
+        working-directory: server
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          NODE_ENV: test
